@@ -2,5 +2,15 @@
 <resources>
 
     <string name="app_name">WSsample</string>
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <string name="user_name_hint">Введите имя</string>
+    <string name="user_password_hint">Введите пароль</string>
+
+    <string name="login_button">Войти</string>
+    <string name="logout_button">Выйти</string>
+
+    <string name="user_input_invalid">Заполните поля</string>
+    <string name="login_success">Вы авторизовались</string>
 
 </resources>
