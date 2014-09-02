@@ -9,5 +9,7 @@ public class Consts {
     public static final long LOCATION_UPDATE_TIME = TimeUnit.MINUTES.toMillis(1);
     public static final long LOCATION_ACCURANCY = 300;
 
+    public static final long DEFAULT_MAP_ZOOM = 10;
+
     public static final int MAPPOINTS_UPDATED_NOTIFICATION_ID = 11;
 }

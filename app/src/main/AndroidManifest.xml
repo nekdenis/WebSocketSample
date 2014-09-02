@@ -34,7 +34,7 @@
             android:name="com.github.nekdenis.wssample.provider.GeneratedProvider"
             android:authorities="com.github.nekdenis.wssample.provider"
             android:exported="false" />
-        <service android:name=".service.PushService"/>
+        <service android:name=".service.SocketService"/>
     </application>
 
 </manifest>

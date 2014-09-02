@@ -2,31 +2,42 @@ package com.github.nekdenis.wssample.activity;
 
 import android.content.ComponentName;
 import android.content.ServiceConnection;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.github.nekdenis.wssample.R;
 import com.github.nekdenis.wssample.fragment.LoginFragment;
-import com.github.nekdenis.wssample.service.PushService;
+import com.github.nekdenis.wssample.provider.mappoint.MappointColumns;
+import com.github.nekdenis.wssample.provider.mappoint.MappointCursor;
+import com.github.nekdenis.wssample.service.SocketService;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import util.Consts;
 import util.Settings;
 
 public class MainActivity extends FragmentActivity implements LoginFragment.LoginManager {
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
-    private GoogleMap mMap;
+    private static final int MAPPOINTS_LOADER_ID = 0;
+
+    private GoogleMap map;
     private MenuItem logoutItem;
     private SocketServiceConnection socketServiceConnection;
+    private SocketService socketService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,7 +101,7 @@ public class MainActivity extends FragmentActivity implements LoginFragment.Logi
     private void initView() {
         if (Settings.isLoginSuccessfull(this)) {
             startSocketService();
-        }else {
+        } else {
             showLoginFragment();
         }
     }
@@ -104,20 +115,18 @@ public class MainActivity extends FragmentActivity implements LoginFragment.Logi
     }
 
     private void setUpMapIfNeeded() {
-        // Do a null check to confirm that we have not already instantiated the map.
-        if (mMap == null) {
-            // Try to obtain the map from the SupportMapFragment.
-            mMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.main_map_fragment))
+        if (map == null) {
+            map = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.main_map_fragment))
                     .getMap();
-            // Check if we were successful in obtaining the map.
-            if (mMap != null) {
+            if (map != null) {
                 setUpMap();
             }
         }
     }
 
     private void setUpMap() {
-        mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
+        map.setMyLocationEnabled(true);
+        getSupportLoaderManager().initLoader(MAPPOINTS_LOADER_ID, null, new MapPointLoaderCallback());
     }
 
     @Override
@@ -130,11 +139,9 @@ public class MainActivity extends FragmentActivity implements LoginFragment.Logi
     }
 
     private void startSocketService() {
-        bindService(PushService.startIntent(getApplicationContext()), socketServiceConnection, BIND_IMPORTANT);
-        getApplicationContext().startService(PushService.startIntent(getApplicationContext()));
+        bindService(SocketService.startIntent(getApplicationContext()), socketServiceConnection, BIND_IMPORTANT);
+        getApplicationContext().startService(SocketService.startIntent(getApplicationContext()));
     }
-
-    private PushService socketService;
 
     private class SocketServiceConnection implements ServiceConnection {
 
@@ -145,17 +152,48 @@ public class MainActivity extends FragmentActivity implements LoginFragment.Logi
 
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            socketService = ((PushService.Binder) service).getService();
+            socketService = ((SocketService.Binder) service).getService();
             socketService.onStartCommand(null, 0, 0);
             socketService.attachListener(new SocketServiceMessageListener());
         }
     }
 
-    private class SocketServiceMessageListener implements PushService.ServiceMessageListener {
+    private class SocketServiceMessageListener implements SocketService.ServiceMessageListener {
 
         @Override
         public void onMapPointsResponse() {
-            //TODO:reload loader
+            //Loader automatically update content so we do not need this callback. I've keep it just for sample
+        }
+    }
+
+    private class MapPointLoaderCallback implements LoaderManager.LoaderCallbacks<Cursor> {
+
+        @Override
+        public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+            return new CursorLoader(MainActivity.this, MappointColumns.CONTENT_URI, null, null, null, null);
+        }
+
+        @Override
+        public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+            if (map != null) {
+                map.clear();
+                MappointCursor mappointCursor = new MappointCursor(data);
+                for (mappointCursor.moveToFirst(); !mappointCursor.isAfterLast(); mappointCursor.moveToNext()) {
+                    map.addMarker(new MarkerOptions()
+                            .position(new LatLng(mappointCursor.getLat(), mappointCursor.getLon()))
+                            .title(String.valueOf(mappointCursor.getServerId())));
+                    if (mappointCursor.isLast()) {
+                        map.animateCamera(CameraUpdateFactory.newLatLngZoom(
+                                new LatLng(mappointCursor.getLat(), mappointCursor.getLon()),
+                                Consts.DEFAULT_MAP_ZOOM));
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void onLoaderReset(Loader<Cursor> loader) {
+
         }
     }
 }

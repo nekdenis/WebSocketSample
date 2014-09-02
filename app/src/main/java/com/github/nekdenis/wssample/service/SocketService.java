@@ -39,9 +39,9 @@ import util.SLog;
 import util.Settings;
 
 
-public class PushService extends Service {
+public class SocketService extends Service {
 
-    private static final String TAG = PushService.class.getSimpleName();
+    private static final String TAG = SocketService.class.getSimpleName();
 
     public static final String ACTION_CONNECT = "com.github.nekdenis.wssample.ACTION_CONNECT";
     public static final String ACTION_SHUT_DOWN = "com.github.nekdenis.wssample.ACTION_SHUT_DOWN";
@@ -58,13 +58,13 @@ public class PushService extends Service {
     private LocationListener locationListener;
 
     public static Intent startIntent(Context context) {
-        Intent i = new Intent(context, PushService.class);
+        Intent i = new Intent(context, SocketService.class);
         i.setAction(ACTION_CONNECT);
         return i;
     }
 
     public static Intent closeIntent(Context context) {
-        Intent i = new Intent(context, PushService.class);
+        Intent i = new Intent(context, SocketService.class);
         i.setAction(ACTION_SHUT_DOWN);
         return i;
     }
@@ -128,8 +128,8 @@ public class PushService extends Service {
 
     public class Binder extends android.os.Binder {
 
-        public PushService getService() {
-            return PushService.this;
+        public SocketService getService() {
+            return SocketService.this;
         }
     }
 
@@ -220,7 +220,7 @@ public class PushService extends Service {
             isConnecting = false;
             SLog.d(TAG, String.format("Disconnected! Code: %d Reason: %s", code, reason));
             if (!shutDown) {
-                startService(startIntent(PushService.this));
+                startService(startIntent(SocketService.this));
             } else {
                 stopSelf();
             }
