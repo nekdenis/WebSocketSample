@@ -196,7 +196,7 @@ public class PushService extends Service {
 
     private void startUpdateLocation() {
         LocationRequest request = LocationRequest.create()
-                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+                .setPriority(LocationRequest.PRIORITY_LOW_POWER)
                 .setInterval(Consts.LOCATION_UPDATE_TIME)
                 .setFastestInterval(Consts.LOCATION_UPDATE_TIME);
 
