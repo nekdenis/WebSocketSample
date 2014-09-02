@@ -1,10 +1,5 @@
 package com.github.nekdenis.wssample.provider;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-
 import android.content.ContentProvider;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderResult;
@@ -20,6 +15,15 @@ import android.util.Log;
 import com.github.nekdenis.wssample.BuildConfig;
 import com.github.nekdenis.wssample.provider.mappoint.MappointColumns;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+
+/**
+ * This is generated content provider by this tool:
+ * @link https://github.com/BoD/android-contentprovider-generator
+ */
 public class GeneratedProvider extends ContentProvider {
     private static final String TAG = GeneratedProvider.class.getSimpleName();
 

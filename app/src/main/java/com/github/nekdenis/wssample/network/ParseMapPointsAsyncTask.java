@@ -14,6 +14,9 @@ import java.util.List;
 
 import util.SLog;
 
+/**
+ * backgroud server message parser
+ */
 public class ParseMapPointsAsyncTask extends AsyncTask<Void, Void, List<ContentValues>> {
 
     private static final String TAG = ParseMapPointsAsyncTask.class.getSimpleName();
@@ -28,7 +31,11 @@ public class ParseMapPointsAsyncTask extends AsyncTask<Void, Void, List<ContentV
         this.callback = callback;
     }
 
+    /**
+     * if there is no context we should avoid of calling UI methods
+     */
     public void detachCallback() {
+        this.callback.onDetach();
         this.callback = null;
     }
 

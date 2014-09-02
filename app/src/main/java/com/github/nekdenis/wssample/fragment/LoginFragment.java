@@ -21,6 +21,9 @@ import com.github.nekdenis.wssample.R;
 
 import util.Settings;
 
+/**
+ * fragment with login form
+ */
 public class LoginFragment extends Fragment {
 
     public static final String TAG = LoginFragment.class.getSimpleName();
@@ -29,6 +32,7 @@ public class LoginFragment extends Fragment {
     private EditText passwordEditText;
     private Button loginButton;
 
+    //There are no any arguments so basically we do not need this method
     public static LoginFragment newInstance() {
         LoginFragment fragment = new LoginFragment();
         return fragment;
@@ -56,6 +60,7 @@ public class LoginFragment extends Fragment {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        //Check if wrong activity add this fragment - it won't start
         if (!(getActivity() instanceof LoginManager)) {
             throw  new RuntimeException("Activity not implements LoginHandler interface");
         }
@@ -74,6 +79,7 @@ public class LoginFragment extends Fragment {
                 login();
             }
         });
+        //on soft keyboad Done button click
         passwordEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId == EditorInfo.IME_ACTION_DONE) {
@@ -89,6 +95,7 @@ public class LoginFragment extends Fragment {
         if (validateInputs()) {
             Settings.putUserLogin(getActivity(), nameEditText.getText().toString());
             Settings.putUserPassword(getActivity(), passwordEditText.getText().toString());
+            //close soft keyboard
             InputMethodManager imm = (InputMethodManager)getActivity().getSystemService(
                     Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(passwordEditText.getWindowToken(), 0);

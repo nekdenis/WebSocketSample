@@ -28,16 +28,22 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import util.Consts;
 import util.Settings;
 
+/**
+ * Activity with map
+ */
 public class MainActivity extends FragmentActivity implements LoginFragment.LoginManager {
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private static final int MAPPOINTS_LOADER_ID = 0;
-
+    //map from MapFragment may be not initialized if user have not installed GooglePlayServices
     private GoogleMap map;
-    private MenuItem logoutItem;
-    private SocketServiceConnection socketServiceConnection;
+    //service for controlling web socket
     private SocketService socketService;
+    //service connection/disconnection listener
+    private SocketServiceConnection socketServiceConnection;
+    //listener that receives messages from service
+    private SocketServiceMessageListener serviceMessageListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,23 +51,13 @@ public class MainActivity extends FragmentActivity implements LoginFragment.Logi
         setContentView(R.layout.activity_main);
         setUpMapIfNeeded();
         socketServiceConnection = new SocketServiceConnection();
+        serviceMessageListener = new SocketServiceMessageListener();
         initView();
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (socketService != null) {
-            socketService.detachListener();
-        }
-        unbindService(socketServiceConnection);
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
-        logoutItem = menu.findItem(R.id.action_logout);
-        logoutItem.setVisible(Settings.isLoginSuccessfull(this));
         return true;
     }
 
@@ -70,23 +66,16 @@ public class MainActivity extends FragmentActivity implements LoginFragment.Logi
         switch (item.getItemId()) {
             case R.id.action_logout:
                 logout();
+                //invalidate to hide button after logout
                 supportInvalidateOptionsMenu();
         }
         return super.onMenuItemSelected(featureId, item);
     }
 
-    private void logout() {
-        Settings.putUserLogin(MainActivity.this, "");
-        Settings.putUserPassword(MainActivity.this, "");
-        showLoginFragment();
-        if (socketService != null) {
-            socketService.startService(SocketService.closeIntent(this));
-        }
-    }
-
     @Override
     protected void onPause() {
         if (socketService != null) {
+            //disable interaction with UI from service
             socketService.detachListener();
         }
         super.onPause();
@@ -97,15 +86,33 @@ public class MainActivity extends FragmentActivity implements LoginFragment.Logi
         super.onResume();
         setUpMapIfNeeded();
         if (socketService != null) {
-            socketService.attachListener(new SocketServiceMessageListener());
+            //enable interaction with UI from service
+            socketService.attachListener(serviceMessageListener);
         }
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        unbindService(socketServiceConnection);
+    }
+
     private void initView() {
+        //if user not logged in authorization form will be opened
         if (Settings.isLoginSuccessfull(this)) {
             startSocketService();
         } else {
             showLoginFragment();
+        }
+    }
+
+    private void logout() {
+        Settings.putUserLogin(MainActivity.this, "");
+        Settings.putUserPassword(MainActivity.this, "");
+        showLoginFragment();
+        if (socketService != null) {
+            //initialize closing process in service
+            socketService.startService(SocketService.closeIntent(this));
         }
     }
 
@@ -119,8 +126,7 @@ public class MainActivity extends FragmentActivity implements LoginFragment.Logi
 
     private void setUpMapIfNeeded() {
         if (map == null) {
-            map = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.main_map_fragment))
-                    .getMap();
+            map = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.main_map_fragment)).getMap();
             if (map != null) {
                 setUpMap();
             }
@@ -129,14 +135,17 @@ public class MainActivity extends FragmentActivity implements LoginFragment.Logi
 
     private void setUpMap() {
         map.setMyLocationEnabled(true);
+        //load data after map successfully initialized
         getSupportLoaderManager().initLoader(MAPPOINTS_LOADER_ID, null, new MapPointLoaderCallback());
     }
 
     @Override
     public void onLoginSuccessful() {
         Toast.makeText(this, R.string.login_success, Toast.LENGTH_SHORT).show();
+        //update button in ActionBar
         supportInvalidateOptionsMenu();
         Fragment loginFragment = getSupportFragmentManager().findFragmentByTag(LoginFragment.TAG);
+        //close login fragment
         getSupportFragmentManager().beginTransaction().remove(loginFragment).commit();
         startSocketService();
     }
@@ -146,6 +155,9 @@ public class MainActivity extends FragmentActivity implements LoginFragment.Logi
         getApplicationContext().startService(SocketService.startIntent(getApplicationContext()));
     }
 
+    /**
+     * Service connection/disconnection listener
+     */
     private class SocketServiceConnection implements ServiceConnection {
 
         @Override
@@ -161,6 +173,9 @@ public class MainActivity extends FragmentActivity implements LoginFragment.Logi
         }
     }
 
+    /**
+     * Listener that receives messages from Service if activity is visible
+     */
     private class SocketServiceMessageListener implements SocketService.ServiceMessageListener {
 
         @Override
@@ -169,6 +184,9 @@ public class MainActivity extends FragmentActivity implements LoginFragment.Logi
         }
     }
 
+    /**
+     * Loader callback that creates CursorLoader for MappointCursor
+     */
     private class MapPointLoaderCallback implements LoaderManager.LoaderCallbacks<Cursor> {
 
         @Override
@@ -179,6 +197,7 @@ public class MainActivity extends FragmentActivity implements LoginFragment.Logi
         @Override
         public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
             if (map != null) {
+                //clear map and add all markers from database
                 map.clear();
                 MappointCursor mappointCursor = new MappointCursor(data);
                 for (mappointCursor.moveToFirst(); !mappointCursor.isAfterLast(); mappointCursor.moveToNext()) {
@@ -186,6 +205,7 @@ public class MainActivity extends FragmentActivity implements LoginFragment.Logi
                             .position(new LatLng(mappointCursor.getLat(), mappointCursor.getLon()))
                             .title(String.valueOf(mappointCursor.getServerId())));
                     if (mappointCursor.isLast()) {
+                        //show last marker in center of the map
                         map.animateCamera(CameraUpdateFactory.newLatLngZoom(
                                 new LatLng(mappointCursor.getLat(), mappointCursor.getLon()),
                                 Consts.DEFAULT_MAP_ZOOM));

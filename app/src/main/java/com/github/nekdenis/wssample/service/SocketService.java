@@ -38,7 +38,15 @@ import util.Consts;
 import util.SLog;
 import util.Settings;
 
-
+/**
+ * the main part of this app
+ * service handle all web socket iterations:
+ * - connect/disconnect
+ * - receive messages and send them to UI
+ * - receive location updates and send them to server
+ *
+ * service will be alive until app will be deleted or phone rebooted
+ */
 public class SocketService extends Service {
 
     private static final String TAG = SocketService.class.getSimpleName();
@@ -46,23 +54,31 @@ public class SocketService extends Service {
     public static final String ACTION_CONNECT = "com.github.nekdenis.wssample.ACTION_CONNECT";
     public static final String ACTION_SHUT_DOWN = "com.github.nekdenis.wssample.ACTION_SHUT_DOWN";
 
-    private WebSocketConnection connection;
     private final IBinder binder = new Binder();
-    private boolean shutDown = false;
+    private WebSocketConnection connection;
     private ServiceMessageListener listener;
-    private Handler handlerandler;
+    private Handler handler;
     private WakeLock connectionWakeLock;
-    private boolean isConnecting;
+    private boolean shutDown = false;
+    private boolean isConnecting = false;
+
     private ParseMapPointsAsyncTask parseTask;
+
     private LocationClient locationClient;
     private LocationListener locationListener;
 
+    /**
+     * intent for starting service
+     */
     public static Intent startIntent(Context context) {
         Intent i = new Intent(context, SocketService.class);
         i.setAction(ACTION_CONNECT);
         return i;
     }
 
+    /**
+     * intent for stoping service
+     */
     public static Intent closeIntent(Context context) {
         Intent i = new Intent(context, SocketService.class);
         i.setAction(ACTION_SHUT_DOWN);
@@ -77,7 +93,7 @@ public class SocketService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        handlerandler = new Handler();
+        handler = new Handler();
         SLog.d(TAG, "Creating Service " + this.toString());
     }
 
@@ -85,10 +101,13 @@ public class SocketService extends Service {
     public void onDestroy() {
         super.onDestroy();
         SLog.d(TAG, "Destroying Service " + this.toString());
+        //disconnect web socket
         if (connection != null && connection.isConnected()) connection.disconnect();
+        //detach active parsing task to prevent NPE
         if (parseTask != null) {
             parseTask.detachCallback();
         }
+        //remove location update
         if (locationClient != null && locationClient.isConnected() && locationListener != null) {
             locationClient.removeLocationUpdates(locationListener);
         }
@@ -96,6 +115,7 @@ public class SocketService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        //allow to use service when device is inactive
         WakeLock wakelock = ((PowerManager) getSystemService(POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "SocketServiceLock");
         wakelock.acquire();
         SLog.d(TAG, "onStartCommand");
@@ -103,6 +123,7 @@ public class SocketService extends Service {
             SLog.d(TAG, intent.toUri(0));
         }
         shutDown = false;
+        //initialize connection
         if (connection == null || (!connection.isConnected() && !isConnecting)) {
             connectionWakeLock = ((PowerManager) getSystemService(POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "SocketService_clientLock");
             connection = new WebSocketConnection();
@@ -116,6 +137,7 @@ public class SocketService extends Service {
                     connectionWakeLock.release();
                 }
             }
+        //start shutting down
         } else if (intent != null) {
             if (ACTION_SHUT_DOWN.equals(intent.getAction())) {
                 shutDown = true;
@@ -126,13 +148,6 @@ public class SocketService extends Service {
         return START_STICKY;
     }
 
-    public class Binder extends android.os.Binder {
-
-        public SocketService getService() {
-            return SocketService.this;
-        }
-    }
-
     public synchronized void attachListener(ServiceMessageListener listener) {
         this.listener = listener;
     }
@@ -141,6 +156,9 @@ public class SocketService extends Service {
         listener = null;
     }
 
+    /**
+     * send user location to server
+     */
     public synchronized void sendLocation(double lat, double lon) {
         if (connection != null && connection.isConnected()) {
             JSONObject json = new JSONObject();
@@ -152,7 +170,6 @@ public class SocketService extends Service {
             }
             String message = json.toString();
             SLog.d(TAG, "trying to send: " + message);
-
             connection.sendTextMessage(message);
         }
     }
@@ -161,12 +178,19 @@ public class SocketService extends Service {
         return connection != null && connection.isConnected();
     }
 
+    /**
+     * handle incoming message
+     */
     private void handleMessage(String message, WakeLock wakelock) {
         parseTask = new ParseMapPointsAsyncTask(message);
         parseTask.attachCallback(new ParseMapPointsCallback(wakelock));
+        //parse in background
         parseTask.execute();
     }
 
+    /**
+     * init location listener. Check is GPlS available
+     */
     private void initLocationClient() {
         if (locationClient == null || !locationClient.isConnected()) {
             locationListener = new LocationListenerImpl();
@@ -194,6 +218,9 @@ public class SocketService extends Service {
         }
     }
 
+    /**
+     * start listen for location updates
+     */
     private void startUpdateLocation() {
         LocationRequest request = LocationRequest.create()
                 .setPriority(LocationRequest.PRIORITY_LOW_POWER)
@@ -204,6 +231,37 @@ public class SocketService extends Service {
         SLog.d(TAG, "Location update started");
     }
 
+    /**
+     * if no activity is active - show notification about last message
+     */
+    private void sendNotification(List<ContentValues> response) {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
+                .setContentTitle(getString(R.string.app_name))
+                .setContentText(getString(R.string.location_update_notification, response.size()))
+                .setSmallIcon(R.drawable.ic_launcher)
+                .setAutoCancel(true)
+                .setOngoing(false)
+                .setContentIntent(PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT));
+
+        NotificationManager notificationManager = (NotificationManager)
+                getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.notify(Consts.MAPPOINTS_UPDATED_NOTIFICATION_ID, builder.build());
+    }
+
+    public interface ServiceMessageListener {
+        public void onMapPointsResponse();
+    }
+
+    public class Binder extends android.os.Binder {
+
+        public SocketService getService() {
+            return SocketService.this;
+        }
+    }
+
+    /**
+     * Web socket interaction listener
+     */
     private class WebSocketHandlerImpl extends WebSocketHandler {
         @Override
         public void onOpen() {
@@ -235,10 +293,12 @@ public class SocketService extends Service {
             wakelock.acquire();
             SLog.d(TAG, "recieved: " + response);
             handleMessage(response, wakelock);
-
         }
     }
 
+    /**
+     * callback that called after message parsing
+     */
     private class ParseMapPointsCallback implements AsyncTaskCallback<List<ContentValues>> {
 
         private WakeLock wakeLock;
@@ -251,7 +311,7 @@ public class SocketService extends Service {
         public void onPostExecute(final List<ContentValues> result) {
             parseTask = null;
             getContentResolver().bulkInsert(MappointColumns.CONTENT_URI, result.toArray(new ContentValues[result.size()]));
-            handlerandler.post(new Runnable() {
+            handler.post(new Runnable() {
 
                 @Override
                 public void run() {
@@ -271,29 +331,14 @@ public class SocketService extends Service {
         }
     }
 
-    private void sendNotification(List<ContentValues> response) {
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
-                .setContentTitle(getString(R.string.app_name))
-                .setContentText(getString(R.string.location_update_notification, response.size()))
-                .setSmallIcon(R.drawable.ic_launcher)
-                .setAutoCancel(true)
-                .setOngoing(false)
-                .setContentIntent(PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT));
-
-        NotificationManager notificationManager = (NotificationManager)
-                getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.notify(Consts.MAPPOINTS_UPDATED_NOTIFICATION_ID, builder.build());
-    }
-
+    /**
+     * location updates listener
+     */
     private class LocationListenerImpl implements LocationListener {
         @Override
         public void onLocationChanged(Location location) {
             SLog.d(TAG, "received new location");
             sendLocation(location.getLatitude(), location.getLongitude());
         }
-    }
-
-    public interface ServiceMessageListener {
-        public void onMapPointsResponse();
     }
 }

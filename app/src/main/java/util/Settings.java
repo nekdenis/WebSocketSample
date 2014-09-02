@@ -5,6 +5,10 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
 
+
+/**
+ * class that helps work with SharedPreferences
+ */
 public class Settings {
 
     private static final String SP_KEY_USER_LOGIN = "SP_KEY_USER_LOGIN";
