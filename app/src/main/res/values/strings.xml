@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">WSsample</string>
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="app_name">Web Sockets Sample</string>
 
     <string name="user_name_hint">Введите имя</string>
     <string name="user_password_hint">Введите пароль</string>
@@ -12,5 +11,7 @@
 
     <string name="user_input_invalid">Заполните поля</string>
     <string name="login_success">Вы авторизовались</string>
+
+    <string name="location_update_notification">За последнее время добавилось %s новых точек на карте</string>
 
 </resources>

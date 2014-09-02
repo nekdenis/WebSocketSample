@@ -113,33 +113,33 @@ public class MappointSelection extends AbstractSelection<MappointSelection> {
         return this;
     }
 
-    public MappointSelection long(double... value) {
-        addEquals(MappointColumns.LONG, toObjectArray(value));
+    public MappointSelection lon(double... value) {
+        addEquals(MappointColumns.LON, toObjectArray(value));
         return this;
     }
 
-    public MappointSelection longNot(double... value) {
-        addNotEquals(MappointColumns.LONG, toObjectArray(value));
+    public MappointSelection lonNot(double... value) {
+        addNotEquals(MappointColumns.LON, toObjectArray(value));
         return this;
     }
 
-    public MappointSelection longGt(double value) {
-        addGreaterThan(MappointColumns.LONG, value);
+    public MappointSelection lonGt(double value) {
+        addGreaterThan(MappointColumns.LON, value);
         return this;
     }
 
-    public MappointSelection longGtEq(double value) {
-        addGreaterThanOrEquals(MappointColumns.LONG, value);
+    public MappointSelection lonGtEq(double value) {
+        addGreaterThanOrEquals(MappointColumns.LON, value);
         return this;
     }
 
-    public MappointSelection longLt(double value) {
-        addLessThan(MappointColumns.LONG, value);
+    public MappointSelection lonLt(double value) {
+        addLessThan(MappointColumns.LON, value);
         return this;
     }
 
-    public MappointSelection longLtEq(double value) {
-        addLessThanOrEquals(MappointColumns.LONG, value);
+    public MappointSelection lonLtEq(double value) {
+        addLessThanOrEquals(MappointColumns.LON, value);
         return this;
     }
 

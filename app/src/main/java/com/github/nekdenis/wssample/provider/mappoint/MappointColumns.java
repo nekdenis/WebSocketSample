@@ -18,7 +18,7 @@ public class MappointColumns implements BaseColumns {
     public static final String _ID = BaseColumns._ID;
     public static final String SERVER_ID = "server_id";
     public static final String LAT = "lat";
-    public static final String LONG = "long";
+    public static final String LON = "lon";
     public static final String ADDED_DATE = "added_date";
 
     public static final String DEFAULT_ORDER = TABLE_NAME + "." +_ID;
@@ -28,7 +28,7 @@ public class MappointColumns implements BaseColumns {
             TABLE_NAME + "." + _ID + " AS " + BaseColumns._ID,
             TABLE_NAME + "." + SERVER_ID,
             TABLE_NAME + "." + LAT,
-            TABLE_NAME + "." + LONG,
+            TABLE_NAME + "." + LON,
             TABLE_NAME + "." + ADDED_DATE
     };
     // @formatter:on
@@ -38,7 +38,7 @@ public class MappointColumns implements BaseColumns {
         ALL_COLUMNS.add(_ID);
         ALL_COLUMNS.add(SERVER_ID);
         ALL_COLUMNS.add(LAT);
-        ALL_COLUMNS.add(LONG);
+        ALL_COLUMNS.add(LON);
         ALL_COLUMNS.add(ADDED_DATE);
     }
 

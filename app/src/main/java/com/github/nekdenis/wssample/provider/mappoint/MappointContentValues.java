@@ -40,8 +40,8 @@ public class MappointContentValues extends AbstractContentValues {
 
 
 
-    public MappointContentValues putLong(double value) {
-        mContentValues.put(MappointColumns.LONG, value);
+    public MappointContentValues putLon(double value) {
+        mContentValues.put(MappointColumns.LON, value);
         return this;
     }
 

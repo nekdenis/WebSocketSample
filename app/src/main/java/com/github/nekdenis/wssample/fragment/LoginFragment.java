@@ -16,7 +16,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.github.nekdenis.wssample.R;
-import com.github.nekdenis.wssample.Settings;
+
+import util.Settings;
 
 public class LoginFragment extends Fragment {
 
@@ -51,6 +52,14 @@ public class LoginFragment extends Fragment {
     }
 
     @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        if (!(getActivity() instanceof LoginManager)) {
+            throw  new RuntimeException("Activity not implements LoginHandler interface");
+        }
+    }
+
+    @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         initListeners();
@@ -78,9 +87,7 @@ public class LoginFragment extends Fragment {
         if (validateInputs()) {
             Settings.putUserLogin(getActivity(), nameEditText.getText().toString());
             Settings.putUserPassword(getActivity(), passwordEditText.getText().toString());
-            Toast.makeText(getActivity(), R.string.login_success, Toast.LENGTH_SHORT).show();
-            getActivity().supportInvalidateOptionsMenu();
-            getActivity().getSupportFragmentManager().beginTransaction().remove(this).commit();
+            ((LoginManager)getActivity()).onLoginSuccessful();
         }
     }
 
@@ -90,5 +97,9 @@ public class LoginFragment extends Fragment {
             return false;
         }
         return true;
+    }
+
+    public interface LoginManager {
+        void onLoginSuccessful();
     }
 }

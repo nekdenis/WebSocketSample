@@ -29,10 +29,10 @@ public class MappointCursor extends AbstractCursor {
     }
 
     /**
-     * Get the {@code long} value.
+     * Get the {@code lon} value.
      */
-    public double getLong() {
-        return getDoubleOrNull(MappointColumns.LONG);
+    public double getLon() {
+        return getDoubleOrNull(MappointColumns.LON);
     }
 
     /**

@@ -1,4 +1,4 @@
-package com.github.nekdenis.wssample;
+package util;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -41,5 +41,4 @@ public class Settings {
         SharedPreferences settings = getSharedPreferences(context);
         return settings.getString(SP_KEY_USER_PASSWORD, "");
     }
-
 }

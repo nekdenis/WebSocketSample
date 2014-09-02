@@ -28,7 +28,7 @@ public class GeneratedSQLiteOpenHelper extends SQLiteOpenHelper {
             + MappointColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
             + MappointColumns.SERVER_ID + " INTEGER NOT NULL, "
             + MappointColumns.LAT + " REAL NOT NULL, "
-            + MappointColumns.LONG + " REAL NOT NULL, "
+            + MappointColumns.LON + " REAL NOT NULL, "
             + MappointColumns.ADDED_DATE + " INTEGER "
             + ", CONSTRAINT unique_server_id unique (server_id) on conflict replace"
             + " );";

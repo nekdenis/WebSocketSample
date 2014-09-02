@@ -11,7 +11,7 @@
 			"nullable": false,
 		},
 		{
-			"name": "long",
+			"name": "lon",
 			"type": "Double",
 			"nullable": false,
 		},
