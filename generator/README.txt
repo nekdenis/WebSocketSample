@@ -1,0 +1,1 @@
+java -jar android-contentprovider-generator-1.8.0-bundle.jar -i in -o out

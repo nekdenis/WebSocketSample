@@ -29,6 +29,10 @@
         <meta-data
             android:name="com.google.android.maps.v2.API_KEY"
             android:value="@string/google_maps_key" />
+        <provider
+            android:name="com.github.nekdenis.wssample.provider.GeneratedProvider"
+            android:authorities="com.github.nekdenis.wssample.provider"
+            android:exported="false" />
     </application>
 
 </manifest>

@@ -1,0 +1,31 @@
+{
+	"fields": [
+		{
+			"name": "server_id",
+			"type": "Long",
+			"nullable": false,
+		},
+		{
+			"name": "lat",
+			"type": "Double",
+			"nullable": false,
+		},
+		{
+			"name": "long",
+			"type": "Double",
+			"nullable": false,
+		},
+		{
+			"name": "added_date",
+			"type": "Long",
+			"nullable": true,
+		},
+	],
+
+	"constraints": [
+		{
+			"name": "unique_server_id",
+			"definition": "UNIQUE (server_id) ON CONFLICT REPLACE"
+		},
+	],
+}

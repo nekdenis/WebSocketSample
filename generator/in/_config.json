@@ -1,0 +1,12 @@
+{
+	"syntaxVersion": "1.7",
+	"projectPackageId": "com.github.nekdenis.wssample",
+	"authority": "com.github.nekdenis.wssample.provider",
+	"providerJavaPackage": "com.github.nekdenis.wssample.provider",
+	"providerClassName": "GeneratedProvider",
+	"sqliteOpenHelperClassName": "GeneratedSQLiteOpenHelper",
+	"sqliteOpenHelperCallbacksClassName": "GeneratedSQLiteOpenHelperCallbacks",
+	"databaseFileName": "wssample.db",
+	"databaseVersion": 1,
+	"enableForeignKeys": true,
+}
