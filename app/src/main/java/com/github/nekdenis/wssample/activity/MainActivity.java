@@ -79,6 +79,9 @@ public class MainActivity extends FragmentActivity implements LoginFragment.Logi
         Settings.putUserLogin(MainActivity.this, "");
         Settings.putUserPassword(MainActivity.this, "");
         showLoginFragment();
+        if (socketService != null) {
+            socketService.startService(SocketService.closeIntent(this));
+        }
     }
 
     @Override
