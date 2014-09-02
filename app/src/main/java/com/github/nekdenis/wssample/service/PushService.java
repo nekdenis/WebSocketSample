@@ -6,17 +6,25 @@ import android.app.Service;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.location.Location;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.support.v4.app.NotificationCompat;
+import android.util.Log;
 
 import com.github.nekdenis.wssample.R;
 import com.github.nekdenis.wssample.activity.MainActivity;
 import com.github.nekdenis.wssample.network.AsyncTaskCallback;
 import com.github.nekdenis.wssample.network.ParseMapPointsAsyncTask;
 import com.github.nekdenis.wssample.provider.mappoint.MappointColumns;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesClient;
+import com.google.android.gms.location.LocationClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -35,28 +43,23 @@ public class PushService extends Service {
 
     private static final String TAG = PushService.class.getSimpleName();
 
-    public static final String ACTION_PING = "edu.ku.eecs780.ACTION_PING";
-    public static final String ACTION_CONNECT = "edu.ku.eecs780.ACTION_CONNECT";
-    public static final String ACTION_SHUT_DOWN = "edu.edu.eecs780.ACTION_SHUT_DOWN";
+    public static final String ACTION_CONNECT = "com.github.nekdenis.wssample.ACTION_CONNECT";
+    public static final String ACTION_SHUT_DOWN = "com.github.nekdenis.wssample.ACTION_SHUT_DOWN";
 
     private WebSocketConnection connection;
-    private final IBinder mBinder = new Binder();
+    private final IBinder binder = new Binder();
     private boolean shutDown = false;
-    private ServiceMessageListener mListener;
-    private Handler mHandler;
+    private ServiceMessageListener listener;
+    private Handler handlerandler;
     private WakeLock connectionWakeLock;
     private boolean isConnecting;
     private ParseMapPointsAsyncTask parseTask;
+    private LocationClient locationClient;
+    private LocationListener locationListener;
 
     public static Intent startIntent(Context context) {
         Intent i = new Intent(context, PushService.class);
         i.setAction(ACTION_CONNECT);
-        return i;
-    }
-
-    public static Intent pingIntent(Context context) {
-        Intent i = new Intent(context, PushService.class);
-        i.setAction(ACTION_PING);
         return i;
     }
 
@@ -68,13 +71,13 @@ public class PushService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        return mBinder;
+        return binder;
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
-        mHandler = new Handler();
+        handlerandler = new Handler();
         SLog.d(TAG, "Creating Service " + this.toString());
     }
 
@@ -85,6 +88,9 @@ public class PushService extends Service {
         if (connection != null && connection.isConnected()) connection.disconnect();
         if (parseTask != null) {
             parseTask.detachCallback();
+        }
+        if (locationClient != null && locationClient.isConnected() && locationListener != null) {
+            locationClient.removeLocationUpdates(locationListener);
         }
     }
 
@@ -128,11 +134,11 @@ public class PushService extends Service {
     }
 
     public synchronized void attachListener(ServiceMessageListener listener) {
-        mListener = listener;
+        this.listener = listener;
     }
 
     public synchronized void detachListener() {
-        mListener = null;
+        listener = null;
     }
 
     public synchronized void sendLocation(double lat, double lon) {
@@ -161,6 +167,43 @@ public class PushService extends Service {
         parseTask.execute();
     }
 
+    private void initLocationClient() {
+        if (locationClient == null || !locationClient.isConnected()) {
+            locationListener = new LocationListenerImpl();
+            locationClient = new LocationClient(this,
+                    new GooglePlayServicesClient.ConnectionCallbacks() {
+                        @Override
+                        public void onConnected(Bundle bundle) {
+                            Log.d(TAG, "Location client. Connected");
+                            startUpdateLocation();
+                        }
+
+                        @Override
+                        public void onDisconnected() {
+                            Log.d(TAG, "Location client. Disconnected");
+                        }
+                    },
+                    new GooglePlayServicesClient.OnConnectionFailedListener() {
+                        @Override
+                        public void onConnectionFailed(ConnectionResult connectionResult) {
+                            throw new IllegalStateException("Failed connection to location manager " + connectionResult.toString());
+                        }
+                    }
+            );
+            locationClient.connect();
+        }
+    }
+
+    private void startUpdateLocation() {
+        LocationRequest request = LocationRequest.create()
+                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+                .setInterval(Consts.LOCATION_UPDATE_TIME)
+                .setFastestInterval(Consts.LOCATION_UPDATE_TIME);
+
+        locationClient.requestLocationUpdates(request, locationListener);
+        SLog.d(TAG, "Location update started");
+    }
+
     private class WebSocketHandlerImpl extends WebSocketHandler {
         @Override
         public void onOpen() {
@@ -169,7 +212,7 @@ public class PushService extends Service {
             if (connectionWakeLock != null && connectionWakeLock.isHeld()) {
                 connectionWakeLock.release();
             }
-            sendLocation(55.373703d, 37.474764d);
+            initLocationClient();
         }
 
         @Override
@@ -208,12 +251,12 @@ public class PushService extends Service {
         public void onPostExecute(final List<ContentValues> result) {
             parseTask = null;
             getContentResolver().bulkInsert(MappointColumns.CONTENT_URI, result.toArray(new ContentValues[result.size()]));
-            mHandler.post(new Runnable() {
+            handlerandler.post(new Runnable() {
 
                 @Override
                 public void run() {
-                    if (mListener != null) {
-                        mListener.onMapPointsResponse();
+                    if (listener != null) {
+                        listener.onMapPointsResponse();
                     } else {
                         sendNotification(result);
                     }
@@ -240,6 +283,14 @@ public class PushService extends Service {
         NotificationManager notificationManager = (NotificationManager)
                 getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.notify(Consts.MAPPOINTS_UPDATED_NOTIFICATION_ID, builder.build());
+    }
+
+    private class LocationListenerImpl implements LocationListener {
+        @Override
+        public void onLocationChanged(Location location) {
+            SLog.d(TAG, "received new location");
+            sendLocation(location.getLatitude(), location.getLongitude());
+        }
     }
 
     public interface ServiceMessageListener {
