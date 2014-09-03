@@ -7,7 +7,7 @@ import android.text.TextUtils;
 
 
 /**
- * class that helps work with SharedPreferences
+ * class that helps to work with SharedPreferences
  */
 public class Settings {
 

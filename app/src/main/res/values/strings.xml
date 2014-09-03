@@ -11,6 +11,7 @@
 
     <string name="user_input_invalid">Заполните поля</string>
     <string name="login_success">Вы авторизовались</string>
+    <string name="login_no_internet">Сначала подключитесь к сети</string>
 
     <string name="location_update_notification">За последнее время добавилось %s новых точек на карте</string>
 

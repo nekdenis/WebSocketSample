@@ -19,6 +19,7 @@ import android.widget.Toast;
 
 import com.github.nekdenis.wssample.R;
 
+import util.ConnectionStatus;
 import util.Settings;
 
 /**
@@ -32,14 +33,14 @@ public class LoginFragment extends Fragment {
     private EditText passwordEditText;
     private Button loginButton;
 
+    public LoginFragment() {
+        // Required empty public constructor
+    }
+
     //There are no any arguments so basically we do not need this method
     public static LoginFragment newInstance() {
         LoginFragment fragment = new LoginFragment();
         return fragment;
-    }
-
-    public LoginFragment() {
-        // Required empty public constructor
     }
 
     @Override
@@ -62,7 +63,7 @@ public class LoginFragment extends Fragment {
         super.onActivityCreated(savedInstanceState);
         //Check if wrong activity add this fragment - it won't start
         if (!(getActivity() instanceof LoginManager)) {
-            throw  new RuntimeException("Activity not implements LoginHandler interface");
+            throw new RuntimeException("Activity not implements LoginHandler interface");
         }
     }
 
@@ -92,15 +93,23 @@ public class LoginFragment extends Fragment {
     }
 
     private void login() {
-        if (validateInputs()) {
+        if (validateInputs() && checkConnection()) {
             Settings.putUserLogin(getActivity(), nameEditText.getText().toString());
             Settings.putUserPassword(getActivity(), passwordEditText.getText().toString());
             //close soft keyboard
-            InputMethodManager imm = (InputMethodManager)getActivity().getSystemService(
+            InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(
                     Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(passwordEditText.getWindowToken(), 0);
-            ((LoginManager)getActivity()).onLoginSuccessful();
+            ((LoginManager) getActivity()).onLoginSuccessful();
         }
+    }
+
+    private boolean checkConnection() {
+        if (!ConnectionStatus.checkInternetConnection(getActivity())) {
+            Toast.makeText(getActivity(), R.string.login_no_internet, Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        return true;
     }
 
     private boolean validateInputs() {

@@ -35,6 +35,13 @@
             android:authorities="com.github.nekdenis.wssample.provider"
             android:exported="false" />
         <service android:name=".service.SocketService"/>
+        <receiver
+            android:name=".reciever.NetworkReceiver">
+            <intent-filter >
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>
