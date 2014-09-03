@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.util.Log;
 
 import com.github.nekdenis.wssample.service.SocketService;
 
@@ -35,7 +34,7 @@ public void onReceive(Context context, Intent intent) {
             }
             //stop service if no internet
             else {
-                Log.i(TAG, "lost connection");
+                SLog.d(TAG, "lost connection");
                 context.startService(SocketService.closeIntent(context));
             }
         }
