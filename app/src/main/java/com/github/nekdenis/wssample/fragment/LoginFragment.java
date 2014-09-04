@@ -19,8 +19,8 @@ import android.widget.Toast;
 
 import com.github.nekdenis.wssample.R;
 
-import util.ConnectionStatus;
-import util.Settings;
+import com.github.nekdenis.wssample.util.ConnectionStatus;
+import com.github.nekdenis.wssample.util.Settings;
 
 /**
  * fragment with login form

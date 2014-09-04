@@ -8,8 +8,8 @@ import android.net.NetworkInfo;
 
 import com.github.nekdenis.wssample.service.SocketService;
 
-import util.SLog;
-import util.Settings;
+import com.github.nekdenis.wssample.util.SLog;
+import com.github.nekdenis.wssample.util.Settings;
 
 /**
  * Network state change receiver that manage Socket service lifecycle

@@ -25,8 +25,8 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import util.Consts;
-import util.Settings;
+import com.github.nekdenis.wssample.util.Consts;
+import com.github.nekdenis.wssample.util.Settings;
 
 /**
  * Activity with map
@@ -151,6 +151,7 @@ public class MainActivity extends FragmentActivity implements LoginFragment.Logi
     }
 
     private void startSocketService() {
+        //we should use binding mechanism to prevent destroy of the service on whole activity lifecycle
         bindService(SocketService.startIntent(getApplicationContext()), socketServiceConnection, BIND_IMPORTANT);
         getApplicationContext().startService(SocketService.startIntent(getApplicationContext()));
     }
@@ -181,6 +182,7 @@ public class MainActivity extends FragmentActivity implements LoginFragment.Logi
         @Override
         public void onMapPointsResponse() {
             //Loader automatically update content so we do not need this callback. I've keep it just for sample
+//            Toast.makeText(MainActivity.this, "Данные обновлены", Toast.LENGTH_SHORT).show();
         }
     }
 

@@ -8,7 +8,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
@@ -20,6 +19,9 @@ import com.github.nekdenis.wssample.activity.MainActivity;
 import com.github.nekdenis.wssample.network.AsyncTaskCallback;
 import com.github.nekdenis.wssample.network.ParseMapPointsAsyncTask;
 import com.github.nekdenis.wssample.provider.mappoint.MappointColumns;
+import com.github.nekdenis.wssample.util.Consts;
+import com.github.nekdenis.wssample.util.SLog;
+import com.github.nekdenis.wssample.util.Settings;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.location.LocationClient;
@@ -34,9 +36,6 @@ import java.util.List;
 import de.tavendo.autobahn.WebSocketConnection;
 import de.tavendo.autobahn.WebSocketException;
 import de.tavendo.autobahn.WebSocketHandler;
-import util.Consts;
-import util.SLog;
-import util.Settings;
 
 /**
  * the main part of this app
@@ -44,20 +43,17 @@ import util.Settings;
  * - connect/disconnect
  * - receive messages and send them to UI
  * - receive location updates and send them to server
- *
+ * <p/>
  * service will be alive until app will be deleted or phone rebooted
  */
 public class SocketService extends Service {
 
-    private static final String TAG = SocketService.class.getSimpleName();
-
     public static final String ACTION_CONNECT = "com.github.nekdenis.wssample.ACTION_CONNECT";
     public static final String ACTION_SHUT_DOWN = "com.github.nekdenis.wssample.ACTION_SHUT_DOWN";
-
+    private static final String TAG = SocketService.class.getSimpleName();
     private final IBinder binder = new Binder();
     private WebSocketConnection connection;
     private ServiceMessageListener listener;
-    private Handler handler;
     private WakeLock connectionWakeLock;
     private boolean shutDown = false;
     private boolean isConnecting = false;
@@ -93,7 +89,6 @@ public class SocketService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        handler = new Handler();
         SLog.d(TAG, "Creating Service " + this.toString());
     }
 
@@ -137,7 +132,7 @@ public class SocketService extends Service {
                     connectionWakeLock.release();
                 }
             }
-        //start shutting down
+            //start shutting down
         } else if (intent != null) {
             if (ACTION_SHUT_DOWN.equals(intent.getAction())) {
                 shutDown = true;
@@ -148,18 +143,18 @@ public class SocketService extends Service {
         return START_STICKY;
     }
 
-    public synchronized void attachListener(ServiceMessageListener listener) {
+    public void attachListener(ServiceMessageListener listener) {
         this.listener = listener;
     }
 
-    public synchronized void detachListener() {
+    public void detachListener() {
         listener = null;
     }
 
     /**
      * send user location to server
      */
-    public synchronized void sendLocation(double lat, double lon) {
+    public void sendLocation(double lat, double lon) {
         if (connection != null && connection.isConnected()) {
             JSONObject json = new JSONObject();
             try {
@@ -174,7 +169,7 @@ public class SocketService extends Service {
         }
     }
 
-    public synchronized boolean isConnected() {
+    public boolean isConnected() {
         return connection != null && connection.isConnected();
     }
 
@@ -311,17 +306,11 @@ public class SocketService extends Service {
         public void onPostExecute(final List<ContentValues> result) {
             parseTask = null;
             getContentResolver().bulkInsert(MappointColumns.CONTENT_URI, result.toArray(new ContentValues[result.size()]));
-            handler.post(new Runnable() {
-
-                @Override
-                public void run() {
-                    if (listener != null) {
-                        listener.onMapPointsResponse();
-                    } else {
-                        sendNotification(result);
-                    }
-                }
-            });
+            if (listener != null) {
+                listener.onMapPointsResponse();
+            } else {
+                sendNotification(result);
+            }
             wakeLock.release();
         }
 

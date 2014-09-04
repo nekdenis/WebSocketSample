@@ -1,4 +1,4 @@
-package util;
+package com.github.nekdenis.wssample.util;
 
 import android.content.Context;
 import android.content.SharedPreferences;

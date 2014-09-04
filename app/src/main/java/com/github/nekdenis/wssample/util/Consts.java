@@ -1,4 +1,4 @@
-package util;
+package com.github.nekdenis.wssample.util;
 
 import java.util.concurrent.TimeUnit;
 

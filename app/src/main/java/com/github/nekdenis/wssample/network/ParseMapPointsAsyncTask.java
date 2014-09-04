@@ -12,7 +12,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-import util.SLog;
+import com.github.nekdenis.wssample.util.SLog;
 
 /**
  * backgroud server message parser
